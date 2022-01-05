@@ -75,8 +75,20 @@ function write-tocolor {
 }
 
 function New-wordleword {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [switch]
+        $hardmode
+    )
     begin {
-        $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt").toupper()).split())
+        if ($hardmode)
+        {
+            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/mkdir-not-war/scrabble-square-6/master/words6.txt").toupper()).split())
+        }
+        Else{
+            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt").toupper()).split())
+        }
     }
     process {
         Get-Random $Words
@@ -87,10 +99,22 @@ function New-WordleGame {
     param (
         [Parameter()]
         [switch]
-        $UseEmojiResponse
+        $UseEmojiResponse,
+        [Parameter()]
+        [switch]
+        $Hardmode
     )
     begin {
-        [string]$Word = New-wordleword
+        if ($hardmode)
+        {
+            [string]$Word = New-wordleword -hardmode
+            write-host "WORD IS: $Word"
+
+        }
+        else {
+            [string]$Word = New-wordleword
+
+        }
         [int32]$count = 0
         [array]$notletters = @()
         [array]$guessedletter = @()
@@ -124,9 +148,13 @@ write-host " "
             }
             $guessedletter = @()
             $InText = ((read-host "Please guess a five letter word").ToUpper())
-            if ($InText.length -ne 5)
+            if (($InText.length -ne 5) -and ((-not$hardmode)))
             {
                 write-warning "Your guess must be 5 characters long"
+            }
+            elseif((($InText.length -ne 6) -and ($hardmode)))
+            {
+                write-warning "Your guess must be 6 characters long"
             }
             else 
             {
