@@ -12,7 +12,7 @@
 RootModule = 'PSWordle.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.2'
+ModuleVersion = '0.0.3'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -70,7 +70,7 @@ Copyright = '(c) Bradley Wyatt. All rights reserved.'
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-    'New-WordleGame'
+    'New-PSWordleGame'
     'Get-PSWordleLeaderBoard'
 )
 

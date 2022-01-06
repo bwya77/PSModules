@@ -181,6 +181,8 @@ function Check-PSWordleLeaderboardUser {
 function Get-PSWordleLeaderBoard {
     begin{
         $Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
+        $Platform = [System.Environment]::OSVersion.Platform
+
     }
     process{
         $body = @{
@@ -190,11 +192,18 @@ function Get-PSWordleLeaderBoard {
     }
     end {
         #Get the results back which come back as JSON, convert to a object
-        $Results.Content | ConvertFrom-Json | select-object PlayerTag, @{N="Score"; E={[int32]$_.Score}} | sort-object Score -Descending
+            if ($Platform -eq "Unix") {
+                $Results.Content | ConvertFrom-Json | select-object PlayerTag, @{N="Score"; E={[int32]$_.Score}} | sort-object Score -Descending
+            }
+            Else
+            {
+                $data = $Results.Content | ConvertFrom-Json 
+                $data | select-object PlayerTag, @{N="Score"; E={[int32]$_.Score}} | sort-object Score -Descending
+            }
     }
 }
 
-function New-WordleWord {
+function New-PSWordleWord {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -214,7 +223,7 @@ function New-WordleWord {
         Get-Random $Words
     }
 }
-function New-WordleGame {
+function New-PSWordleGame {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -286,12 +295,12 @@ function New-WordleGame {
         }
 
         if ($hardmode) {
-            [string]$Word = New-wordleword -hardmode
+            [string]$Word = New-PSWordleWord -hardmode
             write-host "WORD IS: $Word"
 
         }
         else {
-            [string]$Word = New-wordleword
+            [string]$Word = New-PSWordleWord
 
         }
 
