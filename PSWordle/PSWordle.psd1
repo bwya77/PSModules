@@ -12,7 +12,7 @@
 RootModule = 'PSWordle.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.1'
+ModuleVersion = '0.0.2'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -30,7 +30,7 @@ CompanyName = 'The Lazy Administrator'
 Copyright = '(c) Bradley Wyatt. All rights reserved.'
 
 # Description of the functionality provided by this module
- Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response.'
+ Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response. Play online with friends using the -CompeteOnline param when running New-PSWordleGame'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''
@@ -69,7 +69,10 @@ Copyright = '(c) Bradley Wyatt. All rights reserved.'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'New-WordleGame'
+FunctionsToExport = @(
+    'New-WordleGame'
+    'Get-PSWordleLeaderBoard'
+)
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
