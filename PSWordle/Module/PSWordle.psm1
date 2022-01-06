@@ -321,7 +321,8 @@ If you guess the word in the first try, you get 10 points.
 3rd try: 6 points
 4th try: 4 points
 5th try: 2 points
-6th try: 1 point"
+6th try: 1 point
+If you don't guess it at all you will lose 1 point."
         }
         " "
         "
@@ -419,6 +420,12 @@ After each guess, the color of the letter will change to show you how close your
             write-tocolor -text "You Lose!" -color "Red"
             write-host " "
             write-host "The word was: $Word"
+            if ($CompeteOnline)
+            {
+                Write-Host "You have lost 1 point."
+                Write-Host "updating your score on the leaderboard..."
+                Set-PSWordleScore -user $username -Score -1
+            }
         }
         else {
             write-tocolor -text "You Win!" -color "Green"
