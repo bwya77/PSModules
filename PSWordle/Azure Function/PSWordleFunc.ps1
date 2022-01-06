@@ -19,8 +19,6 @@ if ($Request.Query.Request -eq "AddUser")
         $Guid = New-Guid
         [string]$User = $Request.Query.Username
         [int32]$Score = $Request.Query.Score
-        Write-Output "HERE!!!!!"
-        write-output $score
         if ($Score -lt 0)
         {
             $Score = 0
