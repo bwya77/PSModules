@@ -234,7 +234,10 @@ function New-PSWordleGame {
         $Hardmode,
         [Parameter()]
         [switch]
-        $CompeteOnline
+        $CompeteOnline,
+        [Parameter()]
+        [switch]
+        $ExpertMode
     )
     begin {
         [int32]$count = 0
@@ -248,6 +251,7 @@ function New-PSWordleGame {
             4 = 4
             5 = 2
             6 = 1
+            7 = 1
         }
         if ($CompeteOnline) {
             #Check to see what we are running on
@@ -335,14 +339,20 @@ After each guess, the color of the letter will change to show you how close your
 
         write-tocolor -color Green -text "GREEN means the letter is in the word and in the correct spot"
         write-host " "
-        write-tocolor -color Yellow -text "YELLOW means the letter is in the word but in the wrong spot"
-        write-host " "
-        write-tocolor -color DarkGray -text "GRAY means the letter is not in the word"
-        write-host " "
+        if (-not($ExpertMode))
+        {
+            write-tocolor -color Yellow -text "YELLOW means the letter is in the word but in the wrong spot"
+            write-host " "
+            write-tocolor -color DarkGray -text "GRAY means the letter is not in the word"
+            write-host " "    
+        }
+        else {
+            Write-Host "In Expert Mode only letters in the correct spot will change color. Guessed letters will not be shown."
+        }
     }
     process {
         do {
-            if ($notletters.count -gt 0) {
+            if (($notletters.count -gt 0)-and (-not($ExpertMode))) {
                 write-tocolor -color DarkGray -text "The following letters are not in the word: $notletters"
                 write-host " "
             }
@@ -357,7 +367,15 @@ After each guess, the color of the letter will change to show you how close your
             else {
                 $count++
                 #see if the letter is correct
-                0..4 | Foreach-object {
+                if ($Hardmode)
+                {
+                    [int32]$until = 5
+                }
+                else
+                {
+                    [int32]$until = 4
+                }
+                0..$until | Foreach-object {
                     
                     [string]$char = $InText[$_]
                     $guessedletter += $char
@@ -365,7 +383,7 @@ After each guess, the color of the letter will change to show you how close your
                     [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
                     #See how many times we have guessed the current letter
                     [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
-                    if ($Guessedcount -gt $Appearances) {
+                    if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
                         if ($UseEmojiResponse) {
                             Write-Host "⬛" -NoNewline
                         }
@@ -387,11 +405,23 @@ After each guess, the color of the letter will change to show you how close your
                         }
                         #if the letter is in the word but in the wrong spot
                         elseif ($word.contains("$char")) {
-                            if ($UseEmojiResponse) {
-                                Write-Host "🟨" -NoNewline
+                            if($Expertmode)
+                            {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "⬛" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "DarkGray"
+                                }
                             }
-                            else {
-                                write-tocolor -text $InText[$_] -color "Yellow"
+                            Else
+                            {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "🟨" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "Yellow"
+                                }
                             }
                         }
                         elseif ($InText[$_] -notin $Word) {
