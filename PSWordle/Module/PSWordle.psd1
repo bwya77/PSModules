@@ -104,7 +104,7 @@ PrivateData = @{
         # LicenseUri = ''
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+         ProjectUri = 'https://github.com/bwya77/PSModules/tree/main/PSWordle'
 
         # A URL to an icon representing this module.
         # IconUri = ''
