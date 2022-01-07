@@ -21,17 +21,17 @@ if ($Request.Query.Request -eq "AddUser")
         [int32]$Score = $Request.Query.Score
         if ($Score -lt 0)
         {
-            $Score = 0
+            [int32]$Score = 0
         }
         $ModifiedDateTime = $Request.Query.ModifiedDateTime
         $CreatedTimestamp = $request.Query.CreatedDateTime
         Add-AzTableRow `
         -table $cloudTable `
         -partitionKey 'partition1'`
-        -rowKey ("$($Guid.Guid)") -property @{"PlayerTag"="$User";"Score"="$Score";"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        $allscores = (Get-AzTableRow -Table $cloudTable).Score
-        [int]$place = ($allscores.indexof("$Score"))
-        $Outbody = "Successfully added to the leaderboard! Your place in the leaderboard: $place/$($allscores.Count)`
+        -rowKey ("$($Guid.Guid)") -property @{"PlayerTag"="$User";"Score"=$Score;"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
+        $allscores = (Get-AzTableRow -Table $cloudTable).Score | sort-object
+        [int]$place = ($allscores.indexof("$Score")) + 1
+        $Outbody = "Successfully added to the leaderboard! Your place in the leaderboard: $place/$($allscores.Count) `
 Run Get-PSWordleLeaderBoard to view the leaderboard."
         # Associate values to output bindings by calling 'Push-OutputBinding'.
         Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
@@ -57,10 +57,10 @@ Run Get-PSWordleLeaderBoard to view the leaderboard."
         $ModifiedDateTime = $Request.Query.ModifiedDateTime
         $Guid = $userToDelete.RowKey
 
-        $Score = [int]$Request.Query.Score + [int]$Currentscore
+        [int32]$Score = [int32]$Request.Query.Score + [int32]$Currentscore
         if ($Score -lt 0)
         {
-            $Score = 0
+            [int32]$Score = 0
         }
 
         #Delete the row
@@ -70,9 +70,9 @@ Run Get-PSWordleLeaderBoard to view the leaderboard."
         Add-AzTableRow `
         -table $cloudTable `
         -partitionKey 'partition1'`
-        -rowKey $Guid -property @{"PlayerTag"="$User";"Score"="$Score";"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        $allscores= (Get-AzTableRow -Table $cloudTable).Score
-        [int]$place = ($allscores.indexof("$Score"))
+        -rowKey $Guid -property @{"PlayerTag"="$User";"Score"=$Score;"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
+        $allscores= (Get-AzTableRow -Table $cloudTable).Score | sort-object
+        [int]$place = ($allscores.indexof("$Score")) + 1
         $Outbody = "You now have a total of $Score points! Your place in the leaderboard: $place/$($allscores.Count) `
 Run Get-PSWordleLeaderBoard to view the leaderboard."
         # Associate values to output bindings by calling 'Push-OutputBinding'.
