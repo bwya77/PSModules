@@ -330,10 +330,15 @@ If you don't guess it at all you will lose 1 point."
         }
         " "
         "
-Guess the WORDLE in 6 tries.
+Guess the WORDLE in 6 tries."
+if ($sixletterwords){
+"The WORDLE word is 6 characters long."
+}
+Else{
+"The WORDLE word is 5 characters long."
 
-The WORDLE word is 5 characters long.
-After each guess, the color of the letter will change to show you how close your guess was to the word.
+}
+"After each guess, the color of the letter will change to show you how close your guess was to the word.
 
 "
 
