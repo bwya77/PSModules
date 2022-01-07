@@ -29,8 +29,10 @@ if ($Request.Query.Request -eq "AddUser")
         -table $cloudTable `
         -partitionKey 'partition1'`
         -rowKey ("$($Guid.Guid)") -property @{"PlayerTag"="$User";"Score"="$Score";"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        
-        $Outbody = "Successfully added to the leaderboard! Run Get-PSWordleLeaderBoard to view the leaderboard."
+        $allscores = (Get-AzTableRow -Table $cloudTable).Score
+        [int]$place = ($allscores.indexof("$Score"))
+        $Outbody = "Successfully added to the leaderboard! Your place in the leaderboard: $place/$($allscores.Count)`
+Run Get-PSWordleLeaderBoard to view the leaderboard."
         # Associate values to output bindings by calling 'Push-OutputBinding'.
         Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
@@ -60,6 +62,7 @@ if ($Request.Query.Request -eq "AddUser")
         {
             $Score = 0
         }
+
         #Delete the row
         $userToDelete | Remove-AzTableRow -table $cloudTable
 
@@ -68,8 +71,10 @@ if ($Request.Query.Request -eq "AddUser")
         -table $cloudTable `
         -partitionKey 'partition1'`
         -rowKey $Guid -property @{"PlayerTag"="$User";"Score"="$Score";"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        
-        $Outbody = "You now have a total of $Score points! Run Get-PSWordleLeaderBoard to view the leaderboard."
+        $allscores= (Get-AzTableRow -Table $cloudTable).Score
+        [int]$place = ($allscores.indexof("$Score"))
+        $Outbody = "You now have a total of $Score points! Your place in the leaderboard: $place/$($allscores.Count) `
+Run Get-PSWordleLeaderBoard to view the leaderboard."
         # Associate values to output bindings by calling 'Push-OutputBinding'.
         Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
