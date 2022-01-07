@@ -208,11 +208,11 @@ function New-PSWordleWord {
     param (
         [Parameter()]
         [switch]
-        $hardmode
+        $sixletterwords
     )
     begin {
 
-        if ($hardmode) {
+        if ($sixletterwords) {
             $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
         }
         Else {
@@ -231,7 +231,7 @@ function New-PSWordleGame {
         $UseEmojiResponse,
         [Parameter()]
         [switch]
-        $Hardmode,
+        $sixletterwords,
         [Parameter()]
         [switch]
         $CompeteOnline,
@@ -298,8 +298,8 @@ function New-PSWordleGame {
             }
         }
 
-        if ($hardmode) {
-            [string]$Word = New-PSWordleWord -hardmode
+        if ($sixletterwords) {
+            [string]$Word = New-PSWordleWord -sixletterwords
             write-host "WORD IS: $Word"
 
         }
@@ -357,24 +357,30 @@ After each guess, the color of the letter will change to show you how close your
                 write-host " "
             }
             $guessedletter = @()
-            $InText = ((read-host "Please guess a five letter word").ToUpper())
-            #If the word is not in the word list, dont continue
-            if (($words -contains $InText)-eq $false)
+            $InText = ((read-host "Please guess a word").ToUpper())
+
+            if ($sixletterwords)
             {
-                Write-host "That word is not in our dictionary, please try again." -ForegroundColor red
+                if ($InText.length -ne 6) {
+                    write-warning "Your guess must be 6 characters long"
+                }
             }
             Else
             {
-                if (($InText.length -ne 5) -and ((-not$hardmode))) {
+                if ($InText.length -ne 5) {
                     write-warning "Your guess must be 5 characters long"
                 }
-                elseif ((($InText.length -ne 6) -and ($hardmode))) {
-                    write-warning "Your guess must be 6 characters long"
-                }
-                else {
+            }            
+            #If the word is not in the word list, dont continue
+            if (($GLOBAL:words -contains $InText)-eq $false)
+            {
+                Write-Warning "That word is not in our dictionary, please try again."
+            }
+            Else
+            {
                     $count++
                     #see if the letter is correct
-                    if ($Hardmode)
+                    if ($sixletterwords)
                     {
                         [int32]$until = 5
                     }
@@ -447,8 +453,7 @@ After each guess, the color of the letter will change to show you how close your
                             }
                         }
                     }
-                    write-host " " 
-                }  
+                write-host " " 
             }         
         }
         until(($InText -eq $Word) -or ($Count -eq 6))
@@ -485,7 +490,3 @@ After each guess, the color of the letter will change to show you how close your
         }
     }
 }
-
-
-
-
