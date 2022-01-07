@@ -22,8 +22,7 @@ function Set-ConfigItem {
         $myObject | ConvertTo-Json | Out-File $configFile
     }
 }
-
-function write-tocolor {
+function Write-ToColor {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -177,7 +176,6 @@ function Check-PSWordleLeaderboardUser {
         $Results.Content
     }
 }
-
 function Get-PSWordleLeaderBoard {
     begin{
         $Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
@@ -202,7 +200,6 @@ function Get-PSWordleLeaderBoard {
             }
     }
 }
-
 function New-PSWordleWord {
     [CmdletBinding()]
     param (
@@ -211,7 +208,6 @@ function New-PSWordleWord {
         $sixletterwords
     )
     begin {
-
         if ($sixletterwords) {
             $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
         }
