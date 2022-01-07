@@ -29,7 +29,7 @@ if ($Request.Query.Request -eq "AddUser")
         -table $cloudTable `
         -partitionKey 'partition1'`
         -rowKey ("$($Guid.Guid)") -property @{"PlayerTag"="$User";"Score"=$Score;"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        $allscores = (Get-AzTableRow -Table $cloudTable).Score | sort-object
+        $allscores = (Get-AzTableRow -Table $cloudTable).Score | sort-object -Descending 
         [int]$place = ($allscores.indexof("$Score")) + 1
         $Outbody = "Successfully added to the leaderboard! Your place in the leaderboard: $place/$($allscores.Count) `
 Run Get-PSWordleLeaderBoard to view the leaderboard."
@@ -71,7 +71,7 @@ Run Get-PSWordleLeaderBoard to view the leaderboard."
         -table $cloudTable `
         -partitionKey 'partition1'`
         -rowKey $Guid -property @{"PlayerTag"="$User";"Score"=$Score;"CreatedDateTime"=$CreatedTimestamp;"ModifiedDateTime"=$ModifiedDateTime}
-        $allscores= (Get-AzTableRow -Table $cloudTable).Score | sort-object
+        $allscores= (Get-AzTableRow -Table $cloudTable).Score | sort-object -Descending
         [int]$place = ($allscores.indexof("$Score")) + 1
         $Outbody = "You now have a total of $Score points! Your place in the leaderboard: $place/$($allscores.Count) `
 Run Get-PSWordleLeaderBoard to view the leaderboard."
