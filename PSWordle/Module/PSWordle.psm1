@@ -213,10 +213,10 @@ function New-PSWordleWord {
     begin {
 
         if ($hardmode) {
-            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/mkdir-not-war/scrabble-square-6/master/words6.txt").toupper()).split())
+            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
         }
         Else {
-            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/charlesreid1/five-letter-words/master/sgb-words.txt").toupper()).split())
+            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/5letterwords.txt").toupper()).split())
         }
     }
     process {
