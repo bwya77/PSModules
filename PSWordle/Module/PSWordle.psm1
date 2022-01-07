@@ -240,6 +240,8 @@ function New-PSWordleGame {
         $ExpertMode
     )
     begin {
+        #Boolean flag to determine if we are in a warning state, this will disable other items from running
+        [bool]$warn = $false
         [int32]$count = 0
         [array]$notletters = @()
         [array]$guessedletter = @()
@@ -357,6 +359,7 @@ Else{
     }
     process {
         do {
+            $Warn = $False
             if (($notletters.count -gt 0)-and (-not($ExpertMode))) {
                 write-tocolor -color DarkGray -text "The following letters are not in the word: $notletters"
                 write-host " "
@@ -368,40 +371,82 @@ Else{
             {
                 if ($InText.length -ne 6) {
                     write-warning "Your guess must be 6 characters long"
+                    $Warn = $True
                 }
             }
             Else
             {
                 if ($InText.length -ne 5) {
                     write-warning "Your guess must be 5 characters long"
+                    $Warn = $True
                 }
             }            
             #If the word is not in the word list, dont continue
             if (($GLOBAL:words -contains $InText)-eq $false)
             {
-                Write-Warning "That word is not in our dictionary, please try again."
+                if ($Warn -eq $False)
+                {
+                    Write-Warning "That word is not in our dictionary, please try again."
+                }
             }
             Else
             {
-                    $count++
-                    #see if the letter is correct
-                    if ($sixletterwords)
-                    {
-                        [int32]$until = 5
-                    }
-                    else
-                    {
-                        [int32]$until = 4
-                    }
-                    0..$until | Foreach-object {
+                $count++
+                #see if the letter is correct
+                if ($sixletterwords) {
+                    [int32]$until = 5
+                }
+                else {
+                    [int32]$until = 4
+                }
+                0..$until | Foreach-object {
                         
-                        [string]$char = $InText[$_]
-                        $guessedletter += $char
-                        #See how many instances of the guessed letter there are in the word
-                        [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
-                        #See how many times we have guessed the current letter
-                        [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
-                        if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
+                    [string]$char = $InText[$_]
+                    $guessedletter += $char
+                    #See how many instances of the guessed letter there are in the word
+                    [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
+                    #See how many times we have guessed the current letter
+                    [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
+                    if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
+                        if ($UseEmojiResponse) {
+                            Write-Host "⬛" -NoNewline
+                        }
+                        else {
+                            write-tocolor -text $InText[$_] -color "DarkGray"
+                        }
+                        if ($InText[$_] -notin $notletters) {
+                            $notletters += $InText[$_]
+                        }
+                    }
+                    else {
+                        if ($InText[$_] -eq $Word[$_]) {
+                            if ($UseEmojiResponse) {
+                                Write-Host "🟩" -NoNewline
+                            }
+                            else {
+                                write-tocolor -text $InText[$_] -color "Green"
+                            }
+                        }
+                        #if the letter is in the word but in the wrong spot
+                        elseif ($word.contains("$char")) {
+                            if ($Expertmode) {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "⬛" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "DarkGray"
+                                }
+                            }
+                            Else {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "🟨" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "Yellow"
+                                }
+                            }
+                        }
+                        elseif ($InText[$_] -notin $Word) {
                             if ($UseEmojiResponse) {
                                 Write-Host "⬛" -NoNewline
                             }
@@ -413,51 +458,10 @@ Else{
                             }
                         }
                         else {
-                            if ($InText[$_] -eq $Word[$_]) {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "🟩" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "Green"
-                                }
-                            }
-                            #if the letter is in the word but in the wrong spot
-                            elseif ($word.contains("$char")) {
-                                if($Expertmode)
-                                {
-                                    if ($UseEmojiResponse) {
-                                        Write-Host "⬛" -NoNewline
-                                    }
-                                    else {
-                                        write-tocolor -text $InText[$_] -color "DarkGray"
-                                    }
-                                }
-                                Else
-                                {
-                                    if ($UseEmojiResponse) {
-                                        Write-Host "🟨" -NoNewline
-                                    }
-                                    else {
-                                        write-tocolor -text $InText[$_] -color "Yellow"
-                                    }
-                                }
-                            }
-                            elseif ($InText[$_] -notin $Word) {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "⬛" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "DarkGray"
-                                }
-                                if ($InText[$_] -notin $notletters) {
-                                    $notletters += $InText[$_]
-                                }
-                            }
-                            else {
-                                write-host $InText[$_] -NoNewline
-                            }
+                            write-host $InText[$_] -NoNewline
                         }
                     }
+                }
                 write-host " " 
             }         
         }
@@ -476,7 +480,14 @@ Else{
             }
         }
         else {
-            write-tocolor -text "You Win!" -color "Green"
+            if ($PSVersionTable.PSEdition -eq "Core")
+            {
+                write-Host "🎉💥 You Win! 💥🎉" -ForegroundColor Green
+            }
+            Else
+            {
+                write-tocolor -text "You Win!" -color "Green"
+            }
             if ($CompeteOnline)
             {
                 #using the hashtable, figure out how many points we get based on how quickly we guessed the word
