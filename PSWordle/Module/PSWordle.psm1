@@ -213,10 +213,10 @@ function New-PSWordleWord {
     begin {
 
         if ($hardmode) {
-            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
+            $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
         }
         Else {
-            $Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/5letterwords.txt").toupper()).split())
+            $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/5letterwords.txt").toupper()).split())
         }
     }
     process {
@@ -358,73 +358,39 @@ After each guess, the color of the letter will change to show you how close your
             }
             $guessedletter = @()
             $InText = ((read-host "Please guess a five letter word").ToUpper())
-            if (($InText.length -ne 5) -and ((-not$hardmode))) {
-                write-warning "Your guess must be 5 characters long"
+            #If the word is not in the word list, dont continue
+            if (($words -contains $InText)-eq $false)
+            {
+                Write-host "That word is not in our dictionary, please try again." -ForegroundColor red
             }
-            elseif ((($InText.length -ne 6) -and ($hardmode))) {
-                write-warning "Your guess must be 6 characters long"
-            }
-            else {
-                $count++
-                #see if the letter is correct
-                if ($Hardmode)
-                {
-                    [int32]$until = 5
+            Else
+            {
+                if (($InText.length -ne 5) -and ((-not$hardmode))) {
+                    write-warning "Your guess must be 5 characters long"
                 }
-                else
-                {
-                    [int32]$until = 4
+                elseif ((($InText.length -ne 6) -and ($hardmode))) {
+                    write-warning "Your guess must be 6 characters long"
                 }
-                0..$until | Foreach-object {
-                    
-                    [string]$char = $InText[$_]
-                    $guessedletter += $char
-                    #See how many instances of the guessed letter there are in the word
-                    [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
-                    #See how many times we have guessed the current letter
-                    [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
-                    if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
-                        if ($UseEmojiResponse) {
-                            Write-Host "⬛" -NoNewline
-                        }
-                        else {
-                            write-tocolor -text $InText[$_] -color "DarkGray"
-                        }
-                        if ($InText[$_] -notin $notletters) {
-                            $notletters += $InText[$_]
-                        }
+                else {
+                    $count++
+                    #see if the letter is correct
+                    if ($Hardmode)
+                    {
+                        [int32]$until = 5
                     }
-                    else {
-                        if ($InText[$_] -eq $Word[$_]) {
-                            if ($UseEmojiResponse) {
-                                Write-Host "🟩" -NoNewline
-                            }
-                            else {
-                                write-tocolor -text $InText[$_] -color "Green"
-                            }
-                        }
-                        #if the letter is in the word but in the wrong spot
-                        elseif ($word.contains("$char")) {
-                            if($Expertmode)
-                            {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "⬛" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "DarkGray"
-                                }
-                            }
-                            Else
-                            {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "🟨" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "Yellow"
-                                }
-                            }
-                        }
-                        elseif ($InText[$_] -notin $Word) {
+                    else
+                    {
+                        [int32]$until = 4
+                    }
+                    0..$until | Foreach-object {
+                        
+                        [string]$char = $InText[$_]
+                        $guessedletter += $char
+                        #See how many instances of the guessed letter there are in the word
+                        [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
+                        #See how many times we have guessed the current letter
+                        [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
+                        if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
                             if ($UseEmojiResponse) {
                                 Write-Host "⬛" -NoNewline
                             }
@@ -436,12 +402,54 @@ After each guess, the color of the letter will change to show you how close your
                             }
                         }
                         else {
-                            write-host $InText[$_] -NoNewline
+                            if ($InText[$_] -eq $Word[$_]) {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "🟩" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "Green"
+                                }
+                            }
+                            #if the letter is in the word but in the wrong spot
+                            elseif ($word.contains("$char")) {
+                                if($Expertmode)
+                                {
+                                    if ($UseEmojiResponse) {
+                                        Write-Host "⬛" -NoNewline
+                                    }
+                                    else {
+                                        write-tocolor -text $InText[$_] -color "DarkGray"
+                                    }
+                                }
+                                Else
+                                {
+                                    if ($UseEmojiResponse) {
+                                        Write-Host "🟨" -NoNewline
+                                    }
+                                    else {
+                                        write-tocolor -text $InText[$_] -color "Yellow"
+                                    }
+                                }
+                            }
+                            elseif ($InText[$_] -notin $Word) {
+                                if ($UseEmojiResponse) {
+                                    Write-Host "⬛" -NoNewline
+                                }
+                                else {
+                                    write-tocolor -text $InText[$_] -color "DarkGray"
+                                }
+                                if ($InText[$_] -notin $notletters) {
+                                    $notletters += $InText[$_]
+                                }
+                            }
+                            else {
+                                write-host $InText[$_] -NoNewline
+                            }
                         }
                     }
-                }
-                write-host " " 
-            }           
+                    write-host " " 
+                }  
+            }         
         }
         until(($InText -eq $Word) -or ($Count -eq 6))
     }
