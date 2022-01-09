@@ -351,15 +351,14 @@ Function New-PSWordleGame {
         $dictionaryWords = Get-PSWordleDictionary
         #Int counter to keep track of the number of times we have tried to guess the word
         [int]$guessCount = 1
-        [string]$wordleShare = "", "", "", "", "", "", ""
+        $wordleShare = "", "", "", "", "", "", ""
         #For hard mode, keep an array of correctly guessed letters
         [array]$correctLetters = @()
         [hashtable]$correctLetterPlacement = @{}
         #Create a variable to hold the letters that have been guessed
         [array]$guessedLetters = @()
         #Create a empty hashtable / dictionary that will hold letters that are NOT in the word
-        #TODO: see why i did a hashtable, maybe just make it an array?
-        [hashtable]$notLetters = @{}
+        [string[]]$notLetters = @()
         #Keep a table of the points for each guess
         [hashtable]$pointlookup = @{
             1 = 10
@@ -405,7 +404,7 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
         while ($true) {
             If ($notLetters.count -gt 0)
             {
-                Write-Host "Not in the word: $($notLetters.Values | Sort-Object)" -ForegroundColor DarkGray
+                Write-Host "Not in the word: $($notLetters | Sort-Object)" -ForegroundColor DarkGray
             }
             #Clear the guessed letter array
             $guessedLetters = @()
@@ -514,11 +513,9 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                     }
                     else {
                         Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine 
-                        if (-not($notLetters.Keys -contains $guess[$pos])) {
-                            [string]$Key = $guess[$pos]
-                            [string]$Value = $guess[$pos]
-                            #Add our guessed letter to the hashtable / dictionary
-                            $notLetters.Add($Key, $Value)
+                        if (-not($notLetters -contains $guess[$pos])) {
+                            #Add our guessed letter to the array
+                            $notLetters += $guess[$pos]
                         }
                     }
                 
