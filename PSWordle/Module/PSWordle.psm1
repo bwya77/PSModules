@@ -10,7 +10,7 @@ Current version: $version
 Published version: $PublishedVersion
 Please run Update-Module -Name PSwordle to grab the latest version.
 
-Note: You can hide the update message by including the -IgnoreUpdate parameter when starting a new game"
+Note: You can hide the update message by including the -IgnoreUpdates parameter when starting a new game"
         }
     }
     End {
@@ -305,10 +305,10 @@ Function New-PSWordleGame {
         $HardMode,
         [Parameter()]
         [Switch]
-        $IgnoreUpdate
+        $IgnoreUpdates
     )
     Begin {
-        if (-not($IgnoreUpdate))
+        if (-not($IgnoreUpdates))
         {
             $Info = Get-PSWordleUpdate
             if (-not([string]::IsNullOrWhiteSpace($info))) {
