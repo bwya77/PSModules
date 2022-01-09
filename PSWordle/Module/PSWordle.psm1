@@ -1,3 +1,22 @@
+function Get-PSWordleUpdate {
+    begin {
+        [string]$version = "0.0.5"
+        [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
+    }
+    Process {
+        if ($version -ne $PublishedVersion) {
+            [string]$Message = "A new version of PSWordle is available! 
+Current version: $version
+Published version: $PublishedVersion
+Please run Update-Module -Name PSwordle to grab the latest version.
+
+Note: You can hide the update message by including the -IgnoreUpdate parameter when starting a new game"
+        }
+    }
+    End {
+        $Message
+    }
+}
 function Set-ConfigItem {
     [CmdletBinding()]
     param (
@@ -283,11 +302,21 @@ Function New-PSWordleGame {
         $CompeteOnline,
         [Parameter()]
         [Switch]
-        $HardMode
+        $HardMode,
+        [Parameter()]
+        [Switch]
+        $IgnoreUpdate
     )
     Begin {
+        if (-not($IgnoreUpdate))
+        {
+            $Info = Get-PSWordleUpdate
+            Write-Host $Info -ForegroundColor Yellow
+
+        }
         #region <start> Username items
         if ($CompeteOnline) {
+
             #Get the config file, if none exists, the function will create it and return the path
             $configFile = Get-ConfigFile
             #Read the config file and extract the username
