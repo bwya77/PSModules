@@ -12,168 +12,123 @@ function Set-ConfigItem {
         $configFile
     )
     begin {
-
+        if ([System.Environment]::OSVersion.Platform -eq "Unix") {
+            [string]$configFile = "$env:HOME\PSWordle\config.json"
+        }
+        Else {
+            [string]$configFile = "$env:APPDATA\PSWordle\config.json"
+        }
     }
     Process {
         $myObject = [PSCustomObject]@{
             $configItemName = $configItemValue
         }
         #export myObject to JSON
-        $myObject | ConvertTo-Json | Out-File $configFile
+        $myObject | ConvertTo-Json | Out-File $configFile -Force
     }
 }
-function Write-ToColor {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [string]
-        $color,
-        [Parameter(Mandatory)]
-        [string]
-        $text,
-        [Parameter()]
-        [switch]
-        $colorchars
-    )
-    begin {
-        #if there are multiple colors defined then split them up
-        if ($color -like "*,*") {
-            $Colorchoices = @($Color.split(","))
-            #get the number of colors we are using
-            [int]$Colorcount = $Colorchoices.count
+function Get-ConfigFile {
+    Begin {
+        if ([System.Environment]::OSVersion.Platform -eq "Unix") {
+            [string]$configFile = "$env:HOME\PSWordle\config.json"
         }
-        #If there is only one color defined, then use it
-        else {
-            $Colorchoices = $Color
+        Else {
+            [string]$configFile = "$env:APPDATA\PSWordle\config.json"
+        }
+    }
+    Process {
+        if (-not(Test-Path -Path $configFile)) {
+            #New-Item -ItemType Directory -Path $configFile -Force | Out-Null
+            New-Item -ItemType File -Path $configFile -Force | Out-Null
+        }
+    }
+    End {
+        $configFile
+    }
+}
+function Get-ConfigItem {
+    param (
+        [Parameter()]
+        [string]
+        $configItem,
+        [Parameter()]
+        [string]
+        $configFile
+    )
+    Process {
+        #get the configured username
+        $userName = (Get-Content -Raw -Path $configFile -erroraction:SilentlyContinue | ConvertFrom-Json).$configItem
+    }
+    End {
+        $userName
+    }
+}
+function Get-PSWordleDictionary {
+    Begin {
+        $Platform = [System.Environment]::OSVersion.Platform
+    }
+    Process {
+        if ($Platform -eq "Unix") {
+            #Get dictionary file
+            $dictionary = Select-String "^[a-z]{5}$" "$PSScriptRoot/src/dictionary.txt"
+        }
+        #If we are on Windows
+        Else {
+            #Get dictionary file
+            $dictionary = Select-String "^[a-z]{5}$" "$PSScriptRoot\src\dictionary.txt"
+        }
+    }
+    End {
+        $dictionary
+    }
+}
+function New-PSWordleWord {
+    begin {
+        #Figure out what platform we're on
+        $Platform = [System.Environment]::OSVersion.Platform
+        #If we are on Unix
+        if ($Platform -eq "Unix") {
+            #Get 5 letter words from the files
+            $words = Select-String "^[a-z]{5}$" "$PSScriptRoot/src/words.txt"   
+        }
+        #If we are on Windows
+        Else {
+            #Get 5 letter words from the files
+            $words = Select-String "^[a-z]{5}$" "$PSScriptRoot\src\words.txt"
         }
     }
     process {
-        #If we are to color each char in the string of text
-        if ($colorchars) {
-            [int]$count = 0
-            #Are we just doing a single word or breaking into chars
-            $Messagechars = $text.Length
-            0..$Messagechars | Foreach-object {
-                if ($count -eq $Colorcount) {
-                    $count = 0
-                }
-                write-host $text[$_] -ForegroundColor $Colorchoices[$count] -NoNewline
-                $count++
-            }
-        }
-        else {
-            #See if we are doing a single word or multiple words / multiple colors
-            if ($color -like "*,*") {
-                [int]$count = 0
-                #split the message up using the space and iterate each one
-                $Messagefix = $text.replace(" ", " ~ ")
-                $Messagefix.Split(" ") | Foreach-object {
-                    if ($count -eq $Colorcount) {
-                        $count = 0
-                    }
-                    if ($_ -eq "~") {
-                        write-host " " -NoNewline
-                        $count = $count - 1
-                    }
-                    else {
-                        write-host $_ -ForegroundColor $Colorchoices[$count] -NoNewline
-                    }
-                    $count++
-                }
+        #Get a random word from the word list
+        Get-Random $Words
+    }
+}
+function New-PSWordleUser {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]
+        $userName
+    )
+    Begin {
+
+    }
+    Process {
+        While ($true) {
+            Write-Host "Checking online to see if that username is available"
+            $Check = Get-PSWordleLeaderboardUser -username $userName
+
+            if ($Check -eq "True") {
+                Write-Host "That username is already taken! Please enter a new one." -ForegroundColor Yellow
+                $userName = Read-Host -Prompt "Please enter a new UserName "
             }
             else {
-                Write-Host $text -ForegroundColor $Colorchoices -NoNewline
+                Write-Host "Success! Username is available" -ForegroundColor Green; break
             }
         }
     }
-}
-function Set-PSWordleScore {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $user,
-        [Parameter()]
-        [int]
-        $score
-    )
-    Begin
-    {
-        $Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
-
-        $body = @{
-            "Request"  = "CheckUser"
-            "Username" = $user
-        }
-        $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
-        #If the user is present
-        if ($Results -eq "True")
-        {
-            [bool]$current = $true 
-        }
-        #If the user is not present
-        Else 
-        {
-            [bool]$current = $false
-        }
-    }
-    Process 
-    {
-        #If our user is currently on the leaderboard we need to adjust the score
-        if ($current -eq $true)
-        {
-            $ModifiedTimestamp = get-date -Format yyyyMMdd:HHmmss
-            $body = @{
-                "Request"  = "AddUser"
-                "Username" = $user
-                "Score"    = $Score
-                "ModifiedDateTime" = $ModifiedTimestamp
-                "IsPresent" = "true"
-            }
-            $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
-        }
-        #if our user is not currently on the leaderboard, we can just add their score
-        else {
-            $CreatedTimestamp = get-date -Format yyyyMMdd:HHmmss
-            $body = @{
-                "Request"  = "AddUser"
-                "Username" = $user
-                "Score"    = $Score
-                "CreatedDateTime" = $CreatedTimestamp
-                "ModifiedDateTime" = $CreatedTimestamp
-                "IsPresent" = "false"
-            }
-            $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
-            #Tell the user that we successfuly added them and tell them what place they are in the leaderboard
-        }
-    }
-    End
-    {
-        $Results
-    }
-}
-function Check-PSWordleLeaderboardUser {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $username
-    )
-    begin
-    {
-        $Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
-    }
-    Process
-    {
-        $body = @{
-            "Request" = "CheckUser"
-            "Username" = $username
-        }
-        $Results = Invoke-WebRequest -Uri $uri -Body $body
-    }
-    End 
-    {
-        $Results.Content
+    End {
+        Set-ConfigItem -ConfigItemName username -ConfigItemValue $username
+        $userName
     }
 }
 function Get-PSWordleLeaderBoard {
@@ -200,123 +155,183 @@ function Get-PSWordleLeaderBoard {
             }
     }
 }
-function New-PSWordleWord {
+function Get-PSWordleLeaderboardUser {
     [CmdletBinding()]
     param (
         [Parameter()]
-        [switch]
-        $sixletterwords
+        [string]
+        $username
     )
-    begin {
-        if ($sixletterwords) {
-            $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/6letterwords.txt").toupper()).split())
-        }
-        Else {
-            $GLOBAL:Words = @(((Invoke-RestMethod -Uri "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/src/5letterwords.txt").toupper()).split())
-        }
+    begin
+    {
+        #TODO make this a param
+        [string]$Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
     }
-    process {
-        Get-Random $Words
+    Process
+    {
+        #Todo: splat this
+        $body = @{
+            "Request" = "CheckUser"
+            "Username" = $username
+        }
+        $Results = Invoke-WebRequest -Uri $uri -Body $body
+    }
+    End 
+    {
+        $Results.Content
     }
 }
-function New-PSWordleGame {
+function Set-PSWordleScore {
     [CmdletBinding()]
     param (
         [Parameter()]
-        [switch]
-        $UseEmojiResponse,
+        [string]
+        $user,
         [Parameter()]
-        [switch]
-        $sixletterwords,
+        [int]
+        $score
+    )
+    Begin
+    {
+        #TODO: make this a param
+        #The URL to the function
+        $Uri = "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
+        #
+        #TODO: splat this
+        $body = @{
+            "Request"  = "CheckUser"
+            "Username" = $user
+        }
+        $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
+    }
+    Process 
+    {
+        #If our user is currently on the leaderboard we need to adjust the score
+        if ($Results -eq 'True') {
+            $ModifiedTimestamp = get-date -Format yyyyMMdd:HHmmss
+            $body = @{
+                "Request"  = "AddUser"
+                "Username" = $user
+                "Score"    = $Score
+                "ModifiedDateTime" = $ModifiedTimestamp
+                "IsPresent" = "true"
+            }
+            $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
+        }
+        #if our user is not currently on the leaderboard, we can just add their score
+        else {
+            $CreatedTimestamp = get-date -Format yyyyMMdd:HHmmss
+            $body = @{
+                "Request"  = "AddUser"
+                "Username" = $user
+                "Score"    = $Score
+                "CreatedDateTime" = $CreatedTimestamp
+                "ModifiedDateTime" = $CreatedTimestamp
+                "IsPresent" = "false"
+            }
+            $Results = (Invoke-WebRequest -Uri $uri -Body $body).Content
+        }
+    }
+    End
+    {
+        $Results
+    }
+}
+
+Function Get-MatchedItems {
+    [CmdletBinding()]
+    param (
         [Parameter()]
-        [switch]
+        [string]
+        $Guess,
+        [Parameter()]
+        [string]
+        $Word
+    )
+    Begin {
+        [array]$changechars = @()
+        [int]$count = -1
+        [string]$guessNew = ""
+    }
+    Process {
+        0..4 | ForEach-Object {
+            $count++
+            if ($guess[$_] -eq $word[$_]) {
+                $changechars += $count
+            }
+        }
+        [int]$count = -1
+        
+        $Guess.ToCharArray() | ForEach-Object {
+            $Count++
+            if ($count -in $changechars) {
+                $guessNew += $_
+            }
+            Else {
+                $guessNew += "*"
+            }
+        }
+    }
+    End {
+        $guessNew.toupper()
+    }
+}
+Function New-PSWordleGame {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [Switch]
         $CompeteOnline,
         [Parameter()]
-        [switch]
-        $ExpertMode
+        [Switch]
+        $HardMode
     )
-    begin {
-        #Boolean flag to determine if we are in a warning state, this will disable other items from running
-        [bool]$warn = $false
-        [int32]$count = 0
-        [array]$notletters = @()
-        [array]$guessedletter = @()
-        [int]$points = 0
-        $pointlookup = @{
+    Begin {
+        #region <start> Username items
+        if ($CompeteOnline) {
+            #Get the config file, if none exists, the function will create it and return the path
+            $configFile = Get-ConfigFile
+            #Read the config file and extract the username
+            [string]$userName = Get-ConfigItem -ConfigItem username -ConfigFile $configFile
+            if ([string]::IsNullOrWhiteSpace($userName))
+            {
+                $userNameAttempt = Read-Host "Please enter a username you wish to use"
+                $userName = New-PSWordleUser -userName $userNameAttempt
+            }
+        }
+        #Get a new random word
+        $Word = New-PSWordleWord
+        #Get Dictionary words
+        $dictionaryWords = Get-PSWordleDictionary
+        #Int counter to keep track of the number of times we have tried to guess the word
+        [int]$guessCount = 1
+        $wordleShare = "", "", "", "", "", "", ""
+        #For hard mode, keep an array of correctly guessed letters
+        [array]$correctLetters = @()
+        [hashtable]$correctLetterPlacement = @{}
+        #Create a variable to hold the letters that have been guessed
+        [array]$guessedLetters = @()
+        #Create a empty hashtable / dictionary that will hold letters that are NOT in the word
+        [hashtable]$notLetters = @{}
+        #Keep a table of the points for each guess
+        [hashtable]$pointlookup = @{
             1 = 10
             2 = 8
             3 = 6
             4 = 4
             5 = 2
             6 = 1
-            7 = 1
         }
-        if ($CompeteOnline) {
-            #Check to see what we are running on
-            $Platform = [System.Environment]::OSVersion.Platform
-            if ($Platform -eq "Unix") {
-                #see if our directories are present, if not then create them
-                if (-not(Test-Path -Path $env:HOME\PSWordle\config.json)) {
-                    New-Item -ItemType Directory -Path $env:HOME\PSWordle -Force | Out-Null
-                    New-Item -ItemType File -Path $env:HOME\PSWordle\config.json -Force | Out-Null
-                }
-                #get the configured username
-                $username = (Get-Content -Raw -Path $env:HOME\PSWordle\config.json -erroraction:SilentlyContinue | ConvertFrom-Json).username
-                #If there is no username, then we need to create one
-                if (-not($username)) {
-                    Do
-                    {
-                        if ($Check -eq "True")
-                        {
-                            Write-Host "That username is already taken! Please enter a new one."
-                        }
-                        $usernameinput = Read-Host "Please enter a username you wish to use: "
-                        Write-Host "Checking online to see if that username is available"
-                        $Check = Check-PSWordleLeaderboardUser -username $usernameinput
-                    }
-                    Until ($Check -eq "False")
-                    Write-Host "Success! Username is available"
-                    Set-ConfigItem -ConfigItemName username -ConfigItemValue $usernameinput -configFile $env:HOME\PSWordle\config.json
-                    $username = (Get-Content -Raw -Path $env:HOME\PSWordle\config.json | ConvertFrom-Json).username
-                }
-            }
-            else {
-                if (-not(Test-Path -Path $env:APPDATA\PSWordle\config.json)) {
-                    New-Item -ItemType Directory -Path $env:APPDATA\PSWordle -Force | Out-Null
-                    New-Item -ItemType File -Path $env:APPDATA\PSWordle\config.json -Force | Out-Null
-                }
-                #get the configured username
-                $username = (Get-Content -Raw -Path $env:APPDATA\PSWordle\config.json | ConvertFrom-Json).username
-                #If there is no username, then we need to create one
-                if (-not($username)) {
-                    $usernameinput = Read-Host "Please enter a username you wish to use: "
-                    Set-ConfigItem -ConfigItemName username -ConfigItemValue $usernameinput -configFile $env:APPDATA\PSWordle\config.json
-                    $username = (Get-Content -Raw -Path $env:APPDATA\PSWordle\config.json | ConvertFrom-Json).username
-                }
-            }
-        }
-
-        if ($sixletterwords) {
-            [string]$Word = New-PSWordleWord -sixletterwords
-            write-host "WORD IS: $Word"
-
-        }
-        else {
-            [string]$Word = New-PSWordleWord
-
-        }
-
-        "
- _    _  _____  ____  ____  __    ____ 
-( \/\/ )(  _  )(  _ \(  _ \(  )  ( ___)
- )    (  )(_)(  )   / )(_) ))(__  )__) 
-(__/\__)(_____)(_)\_)(____/(____)(____)"
-        " "
-        if ($CompeteOnline) {
-            write-tocolor -color "Red, Yellow, Blue, Green" -text "Welcome back: $username!" -colorchars
-
+            #region <start> New game prompt and directions
             "
-
+ _  _   __  ____  ____  __    ____ 
+/ )( \ /  \(  _ \(    \(  )  (  __)
+\ /\ /(  O ))   / ) D (/ (_/\ ) _) 
+(_/\_) \__/(__\_)(____/\____/(____)
+                       "
+                       if ($CompeteOnline) {
+                           Write-Host -ForegroundColor Green "Welcome back: $username!"
+               "
 Get points based on how quickly you can guess the word!
 If you guess the word in the first try, you get 10 points.
 2nd try: 8 points
@@ -324,181 +339,183 @@ If you guess the word in the first try, you get 10 points.
 4th try: 4 points
 5th try: 2 points
 6th try: 1 point
-If you don't guess it at all you will lose 1 point."
-        }
-        " "
-        "
-Guess the WORDLE in 6 tries."
-if ($sixletterwords){
-"The WORDLE word is 6 characters long."
-}
-Else{
-"The WORDLE word is 5 characters long."
-
-}
-"After each guess, the color of the letter will change to show you how close your guess was to the word.
-
+If you don't guess it at all you will lose 1 point.
 "
-
-        write-tocolor -color Green -text "GREEN means the letter is in the word and in the correct spot"
-        write-host " "
-        if (-not($ExpertMode))
-        {
-            write-tocolor -color Yellow -text "YELLOW means the letter is in the word but in the wrong spot"
-            write-host " "
-            write-tocolor -color DarkGray -text "GRAY means the letter is not in the word"
-            write-host " "    
-        }
-        else {
-            Write-Host "In Expert Mode only letters in the correct spot will change color. Guessed letters will not be shown."
-        }
+                   }
+                   if ($HardMode)
+                   {
+"
+Any revealed hints must be used in subsequent guesses. Green letters must remain in the correct position.
+"
+                   }
+"The WORDLE word is 5 characters long."
+Write-Host -ForegroundColor Green "GREEN" -NoNewline; Write-Host " means the letter is in the word and in the correct spot"
+Write-Host -ForegroundColor Yellow "YELLOW" -NoNewline; Write-Host " means the letter is in the word but in the wrong spot"
+Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the letter is not in the word"
+        #region <end>
     }
-    process {
-        do {
-            $Warn = $False
-            if (($notletters.count -gt 0)-and (-not($ExpertMode))) {
-                write-tocolor -color DarkGray -text "The following letters are not in the word: $notletters"
-                write-host " "
+    Process {
+        while ($true) {
+            If ($notLetters.count -gt 0)
+            {
+                Write-Host "Not in the word: $($notLetters.Values | Sort-Object)" -ForegroundColor DarkGray
             }
-            $guessedletter = @()
-            $InText = ((read-host "Please guess a word").ToUpper())
+            #Clear the guessed letter array
+            $guessedLetters = @()
+            #Prompt the user for a guess
+            [string]$guess = (Read-Host "($guessCount) Guess a 5-letter word").ToUpper()
 
-            if ($sixletterwords)
+            if ($HardMode)
             {
-                if ($InText.length -ne 6) {
-                    write-warning "Your guess must be 6 characters long"
-                    $Warn = $True
-                }
-            }
-            Else
-            {
-                if ($InText.length -ne 5) {
-                    write-warning "Your guess must be 5 characters long"
-                    $Warn = $True
-                }
-            }            
-            #If the word is not in the word list, dont continue
-            if (($GLOBAL:words -contains $InText)-eq $false)
-            {
-                if ($Warn -eq $False)
+                #For hard mode, if the guess does not contain correct previously guessed letters
+                if (($guess -notcontains $correctLetters) -and ($correctLetters.Count -gt 0))
                 {
-                    Write-Warning "That word is not in our dictionary, please try again."
+                    Do {
+                        #Iterate through the array and see if any letters are not in the guessed word
+                        if (($correctLetters| ForEach-Object{$guess.contains($_)}) -contains $false)
+                        {
+                            Write-Host "You must use all the correct letters from the previous guess" -ForegroundColor Red
+                            #Re-prompt the user for a guess
+                            $guess = (Read-Host "($guessCount) Guess a 5-letter word").ToUpper()
+                        }
+                    }
+                    Until (($correctLetters| ForEach-Object{$guess.contains($_)}) -notcontains $false)
+                }
+                #for hard mode, make sure the letters that were guesed in the correct position are still in the correct position
+                if ($correctLetterPlacement.count -gt 0)
+                {
+                    $correctLetterPlacement.GetEnumerator() | ForEach-Object {
+                        #Until all the letters are in the right spot
+                        While ($guess[$_.name] -ne $_.value) {
+                            Write-Host "Letters shown to be in the correct spot must remain in the correct spot" -ForegroundColor Red
+                            #Re-prompt the user for a guess
+                            $guess = (Read-Host "($guessCount) Guess a 5-letter word").ToUpper()
+                        }
+                    }
                 }
             }
-            Else
-            {
-                $count++
-                #see if the letter is correct
-                if ($sixletterwords) {
-                    [int32]$until = 5
+            
+            #If you guess is the word, you win
+            if ($guess -eq $word.Line) {
+                #If we are running on PWSH then we can use emojis
+                if ($PSVersionTable.PSEdition -eq "Core")
+                {
+                    Write-Host
+                    Write-Host "🎉💥 You Win! 💥🎉" -ForegroundColor Green; $wordleShare[$guessCount] = "🟩" * 5; break
                 }
+                #If we are running on Windows PowerShell then we can't use emojis
                 else {
-                    [int32]$until = 4
+                    Write-Host
+                    Write-Host "You Win!" -ForegroundColor Green; $wordleShare[$guessCount] = "*" * 5; break
                 }
-                0..$until | Foreach-object {
-                        
-                    [string]$char = $InText[$_]
-                    $guessedletter += $char
-                    #See how many instances of the guessed letter there are in the word
-                    [int]$Appearances = $word.Length - $word.replace("$Char", "").Length
-                    #See how many times we have guessed the current letter
-                    [int]$GuessedCount = ($guessedletter | Where-object { $_ -eq $char }).count
-                    if (($Guessedcount -gt $Appearances) -and (-not($ExpertMode))) {
-                        if ($UseEmojiResponse) {
-                            Write-Host "⬛" -NoNewline
+            }
+            #If your guess is too short or too long
+            if ($guess.Length -ne 5) {
+                Write-Host "Your guess must be 5 letters!" -ForegroundColor Red; continue 
+            }
+            #If the guess appears to not be a valid word
+            if ($guess -notin $dictionaryWords.Line) {
+                Write-Host "That word is not in our dictionary, please try again." -ForegroundColor Red ; continue 
+            }
+            #Get all letters that have been guessed in the correct spots
+            [string]$Matches = Get-MatchedItems -Guess $Guess -Word $Word.line
+            #for (<Init>; <Condition>; <Repeat>) { <Body> }
+            #for 5 loops, do the following ( start at 0, while the number is less than 5 run the block, afterwards increment the number by 1)
+            for ($pos = 0; $pos -lt 5; $pos++) {
+                $shareImage = "⬛️"
+                #Add guessed letters to the array
+                
+                #region <start> Reduce letter false positives
+                $guessedLetters += $guess[$pos]
+                #See how many instances of the guessed letter there are in the word
+                [int32]$Appearances = ($Word.line[0..4] -eq $guess[$pos]).count
+                #If we have guessed the letter more than it appears in the word
+                    if ($guess[$pos] -eq $word.Line[$pos]) {
+                        #Add the letter to the correct letters array
+                        $correctLetters += $guess[$pos]
+
+                        #Hard mode: Add correct letters and their placement in the hashtable
+                        if ($HardMode) {
+                            if ($correctLetterPlacement.Keys -notcontains $pos) {
+                                [string]$Key = $pos
+                                [string]$Value = $word.Line[$pos]
+                                #Add our guessed letter to the hashtable / dictionary
+                                $correctLetterPlacement.Add($Key, $Value)
+                            }
                         }
-                        else {
-                            write-tocolor -text $InText[$_] -color "DarkGray"
+                        Write-Host -ForegroundColor Green $guess[$pos] -NoNewLine; $shareImage = "🟩" 
+                    }
+                    #If the letter is in the word, but not in the correct position, we have guessed the letter, but not the correct position
+                    elseif ($guess[$pos] -in $word.Line.ToCharArray()) {
+                        # If the letter appears once, and its in the $Matches string indicating that its in the correct spot, then any other instance of the letter is incorrect
+                        if (($Appearances -eq 1) -and ($Matches.ToCharArray() -contains $guess[$pos])) {
+                            Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
                         }
-                        if ($InText[$_] -notin $notletters) {
-                            $notletters += $InText[$_]
+                        # Get the letters from the guessed word up until the current letter and then see how many times the current character appears
+                        # Then get the times the current letter appears in the word
+                        # If the guessed letter is stil lower than the total times it shows up in the word, then its valid but in the wrong spot
+                        elseif(($guess[0..$pos] -eq $guess[$pos]).Count -le ($word.Line.ToCharArray() -eq $guess[$pos]).Count) {
+                            #Add the letter to the correct letters array
+                            $correctLetters += $guess[$pos]
+                            Write-Host -ForegroundColor Yellow $guess[$pos] -NoNewLine; $shareImage = "🟨" 
+                        }
+                        Else {
+                            #Add the letter to the correct letters array
+                            $correctLetters += $guess[$pos]
+                            Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️"
                         }
                     }
                     else {
-                        if ($InText[$_] -eq $Word[$_]) {
-                            if ($UseEmojiResponse) {
-                                Write-Host "🟩" -NoNewline
-                            }
-                            else {
-                                write-tocolor -text $InText[$_] -color "Green"
-                            }
-                        }
-                        #if the letter is in the word but in the wrong spot
-                        elseif ($word.contains("$char")) {
-                            if ($Expertmode) {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "⬛" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "DarkGray"
-                                }
-                            }
-                            Else {
-                                if ($UseEmojiResponse) {
-                                    Write-Host "🟨" -NoNewline
-                                }
-                                else {
-                                    write-tocolor -text $InText[$_] -color "Yellow"
-                                }
-                            }
-                        }
-                        elseif ($InText[$_] -notin $Word) {
-                            if ($UseEmojiResponse) {
-                                Write-Host "⬛" -NoNewline
-                            }
-                            else {
-                                write-tocolor -text $InText[$_] -color "DarkGray"
-                            }
-                            if ($InText[$_] -notin $notletters) {
-                                $notletters += $InText[$_]
-                            }
-                        }
-                        else {
-                            write-host $InText[$_] -NoNewline
+                        Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine 
+                        if (-not($notLetters.Keys -contains $guess[$pos])) {
+                            [string]$Key = $guess[$pos]
+                            [string]$Value = $guess[$pos]
+                            #Add our guessed letter to the hashtable / dictionary
+                            $notLetters.Add($Key, $Value)
                         }
                     }
-                }
-                write-host " " 
-            }         
-        }
-        until(($InText -eq $Word) -or ($Count -eq 6))
-    }
-    end {
-        if ($InText -ne $Word) {
-            write-tocolor -text "You Lose!" -color "Red"
-            write-host " "
-            write-host "The word was: $Word"
-            if ($CompeteOnline)
-            {
-                Write-Host "You have lost 1 point."
-                Write-Host "updating your score on the leaderboard..."
-                Set-PSWordleScore -user $username -Score -1
+                
+                $wordleShare[$guessCount - 1] += $shareImage 
             }
-        }
-        else {
-            if ($PSVersionTable.PSEdition -eq "Core")
-            {
-                write-Host "🎉💥 You Win! 💥🎉" -ForegroundColor Green
-            }
-            Else
-            {
-                write-tocolor -text "You Win!" -color "Green"
-            }
-            if ($CompeteOnline)
-            {
-                #using the hashtable, figure out how many points we get based on how quickly we guessed the word
-                $points = $pointlookup[$count] 
-                write-host " "
-                if ($Points -eq 1)
+    
+            $guessCount++
+            if ($guessCount -eq 7) {
+                #If you did not guess the word in 6 guesses, replace the guess counter with a X
+                [string]$guessCount = "X"
+                Write-Host; Write-Host "Too many guesses! The right word was: '$($word.Line.toupper())'"
+                if ($CompeteOnline)
                 {
-                    Write-Host "You earned $points point!" 
+                    Write-Host "You have lost 1 point."
+                    Write-Host "Updating your score on the leaderboard..."
+                    Set-PSWordleScore -user $username -Score -1
                 }
-                else {
-                    Write-Host "You earned $points points!" 
-                }
-                Write-Host "Adding your score to the leaderboard..."
-                Set-PSWordleScore -user $username -Score $points
+                break 
             }
+            Write-Host
+        }
+    }
+    End {
+        If ($CompeteOnline) {
+            #using the hashtable, figure out how many points we get based on how quickly we guessed the word
+            $points = $pointlookup[$guessCount] 
+            write-host " "
+            if ($Points -eq 1) {
+                Write-Host "You have earned $points point!" 
+            }
+            else {
+                Write-Host "You have earned $points points!" 
+            }
+            Write-Host "Adding your score to the leaderboard..."
+            Set-PSWordleScore -user $username -Score $points
+        }
+        #If we are running on PWSH or Windows PowerShell, if Windows PowerShell we cannot display emojis
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Write-Host "PSWORDLE $($word.LineNumber) $guessCount/6`r`n"
+            $wordleShare | Where-Object { $_ }
+        }
+        Else {
+            #Display the line number the wordle word was found on as well as how many guesses it took
+            Write-Host "PSWORDLE $($word.LineNumber) $guessCount/6`r`n"
         }
     }
 }
