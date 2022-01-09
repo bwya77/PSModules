@@ -30,7 +30,7 @@ CompanyName = 'The Lazy Administrator'
 Copyright = '(c) Bradley Wyatt. All rights reserved.'
 
 # Description of the functionality provided by this module
- Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response. Play online with friends using the -CompeteOnline param when running New-PSWordleGame. Try hard mode by running New-PSWordleGame -HardMode. Want an even harder challenge? Run New-PSWordleGame -ExpertMode'
+ Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response. Play online with friends using the -CompeteOnline param when running New-PSWordleGame.'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''
