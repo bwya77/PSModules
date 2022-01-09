@@ -311,8 +311,9 @@ Function New-PSWordleGame {
         if (-not($IgnoreUpdate))
         {
             $Info = Get-PSWordleUpdate
-            Write-Host $Info -ForegroundColor Yellow
-
+            if (-not([string]::IsNullOrWhiteSpace($info))) {
+                Write-Host $Info -ForegroundColor Yellow
+            }
         }
         #region <start> Username items
         if ($CompeteOnline) {
