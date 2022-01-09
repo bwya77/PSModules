@@ -351,7 +351,7 @@ Function New-PSWordleGame {
         $dictionaryWords = Get-PSWordleDictionary
         #Int counter to keep track of the number of times we have tried to guess the word
         [int]$guessCount = 1
-        $wordleShare = "", "", "", "", "", "", ""
+        [string]$wordleShare = "", "", "", "", "", "", ""
         #For hard mode, keep an array of correctly guessed letters
         [array]$correctLetters = @()
         [hashtable]$correctLetterPlacement = @{}
