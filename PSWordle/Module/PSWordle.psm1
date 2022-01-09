@@ -237,7 +237,6 @@ function Set-PSWordleScore {
         $Results
     }
 }
-
 Function Get-MatchedItems {
     [CmdletBinding()]
     param (
@@ -312,6 +311,7 @@ Function New-PSWordleGame {
         #Create a variable to hold the letters that have been guessed
         [array]$guessedLetters = @()
         #Create a empty hashtable / dictionary that will hold letters that are NOT in the word
+        #TODO: see why i did a hashtable, maybe just make it an array?
         [hashtable]$notLetters = @{}
         #Keep a table of the points for each guess
         [hashtable]$pointlookup = @{
