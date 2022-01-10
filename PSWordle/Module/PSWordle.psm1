@@ -1,10 +1,15 @@
 function Get-PSWordleUpdate {
     begin {
-        [string]$version = "0.0.6"
-        [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
+        [string]$version = "0.0.7"
+        try { 
+            [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
+        } 
+        catch {
+            $_.Exception.Response.StatusCode.Value__
+        }
     }
     Process {
-        if ($version -ne $PublishedVersion) {
+        if (($version -ne $PublishedVersion) -and ($PublishedVersion.count -gt 0)) {
             [string]$Message = "A new version of PSWordle is available! 
 Current version: $version
 Published version: $PublishedVersion
