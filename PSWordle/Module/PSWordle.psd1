@@ -12,7 +12,7 @@
 RootModule = 'PSWordle.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.5'
+ModuleVersion = '0.0.6'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -30,7 +30,7 @@ CompanyName = 'The Lazy Administrator'
 Copyright = '(c) Bradley Wyatt. All rights reserved.'
 
 # Description of the functionality provided by this module
- Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response. Play online with friends using the -CompeteOnline param when running New-PSWordleGame. Too easy? Try hard mode by using the -HardMode parameter.'
+ Description = 'Play the game WORDLE using PowerShell. Allows text based response and emoji based response. Play online with friends using the -CompeteOnline param when running New-PSWordleGame. Too easy? Try hard mode by using the -HardMode or -UseEmojiResponses parameters'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''

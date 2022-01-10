@@ -1,6 +1,6 @@
 function Get-PSWordleUpdate {
     begin {
-        [string]$version = "0.0.5"
+        [string]$version = "0.0.6"
         [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
     }
     Process {
@@ -322,7 +322,10 @@ Function New-PSWordleGame {
         $HardMode,
         [Parameter()]
         [Switch]
-        $IgnoreUpdates
+        $IgnoreUpdates,
+        [Parameter()]
+        [Switch]
+        $UseEmojiResponses
     )
     Begin {
         if (-not($IgnoreUpdates))
@@ -489,13 +492,23 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                                 $correctLetterPlacement.Add($Key, $Value)
                             }
                         }
-                        Write-Host -ForegroundColor Green $guess[$pos] -NoNewLine; $shareImage = "🟩" 
+                        if ($UseEmojiResponses) {
+                            Write-Host "🟩" -NoNewLine; $shareImage = "🟩" 
+                        }
+                        else {
+                            Write-Host -ForegroundColor Green $guess[$pos] -NoNewLine; $shareImage = "🟩" 
+                        }
                     }
                     #If the letter is in the word, but not in the correct position, we have guessed the letter, but not the correct position
                     elseif ($guess[$pos] -in $word.Line.ToCharArray()) {
                         # If the letter appears once, and its in the $Matches string indicating that its in the correct spot, then any other instance of the letter is incorrect
                         if (($Appearances -eq 1) -and ($Matches.ToCharArray() -contains $guess[$pos])) {
-                            Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
+                            if ($UseEmojiResponses) {
+                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️" 
+                            }
+                            else {
+                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
+                            }
                         }
                         # Get the letters from the guessed word up until the current letter and then see how many times the current character appears
                         # Then get the times the current letter appears in the word
@@ -503,16 +516,31 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                         elseif(($guess[0..$pos] -eq $guess[$pos]).Count -le ($word.Line.ToCharArray() -eq $guess[$pos]).Count) {
                             #Add the letter to the correct letters array
                             $correctLetters += $guess[$pos]
-                            Write-Host -ForegroundColor Yellow $guess[$pos] -NoNewLine; $shareImage = "🟨" 
+                            if ($UseEmojiResponses) {
+                                Write-Host "🟨"  -NoNewLine; $shareImage = "🟨" 
+                            }
+                            else {
+                                Write-Host -ForegroundColor Yellow $guess[$pos] -NoNewLine; $shareImage = "🟨" 
+                            }
                         }
                         Else {
                             #Add the letter to the correct letters array
                             $correctLetters += $guess[$pos]
-                            Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️"
+                            if ($UseEmojiResponses) {
+                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️" 
+                            }
+                            else {
+                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
+                            }
                         }
                     }
                     else {
-                        Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine 
+                        if ($UseEmojiResponses) {
+                            Write-Host "⬛️" -NoNewLine
+                        }
+                        else {
+                            Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine 
+                        }
                         if (-not($notLetters -contains $guess[$pos])) {
                             #Add our guessed letter to the array
                             $notLetters += $guess[$pos]
