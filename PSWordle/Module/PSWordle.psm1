@@ -1,6 +1,6 @@
 function Get-PSWordleUpdate {
     begin {
-        [string]$version = "0.0.7"
+        [string]$version = "0.0.8"
         try { 
             [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
         } 
@@ -560,11 +560,6 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                 #If you did not guess the word in 6 guesses, replace the guess counter with a X
                 [string]$guessCount = "X"
                 Write-Host; Write-Host "Too many guesses! The right word was: '$($word.Line.toupper())'"
-                if ($CompeteOnline) {
-                    Write-Host "You have lost 1 point."
-                    Write-Host "Updating your score on the leaderboard..."
-                    Set-PSWordleScore -user $username -Score -1 -uri "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
-                }
                 break 
             }
             Write-Host
@@ -573,7 +568,12 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
     End {
         If ($CompeteOnline) {
             #using the hashtable, figure out how many points we get based on how quickly we guessed the word
-            $points = $pointlookup[$guessCount] 
+            if ($guessCount -eq 'X') {
+                $Points = -1
+            }
+            Else {
+                $points = $pointlookup[$guessCount] 
+            }
             write-host " "
             if ($Points -eq 1) {
                 Write-Host "You have earned $points point!" 
