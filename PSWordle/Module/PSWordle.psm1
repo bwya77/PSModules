@@ -1,16 +1,16 @@
 function Get-PSWordleUpdate {
     begin {
         [string]$version = "0.0.8"
-        try { 
+        try {
             [string]$PublishedVersion = (Invoke-RestMethod "https://raw.githubusercontent.com/bwya77/PSModules/main/PSWordle/version.txt").Trim()
-        } 
+        }
         catch {
             $_.Exception.Response.StatusCode.Value__
         }
     }
     Process {
         if (($version -ne $PublishedVersion) -and ($PublishedVersion.count -gt 0)) {
-            [string]$Message = "A new version of PSWordle is available! 
+            [string]$Message = "A new version of PSWordle is available!
 Current version: $version
 Published version: $PublishedVersion
 Please run Update-Module -Name PSwordle to grab the latest version.
@@ -113,7 +113,7 @@ function New-PSWordleWord {
         #If we are on Unix
         if ($Platform -eq "Unix") {
             #Get 5 letter words from the files
-            $words = Select-String "^[a-z]{5}$" "$PSScriptRoot/src/words.txt"   
+            $words = Select-String "^[a-z]{5}$" "$PSScriptRoot/src/words.txt"
         }
         #If we are on Windows
         Else {
@@ -182,7 +182,7 @@ function Get-PSWordleLeaderBoard {
         }
         Else
         {
-            $data = $Results.Content | ConvertFrom-Json 
+            $data = $Results.Content | ConvertFrom-Json
             $data | select-object PlayerTag, @{N="Score"; E={[int32]$_.Score}} | sort-object Score -Descending
         }
     }
@@ -212,7 +212,7 @@ function Get-PSWordleLeaderboardUser {
     {
         $Results = Invoke-WebRequest @Param
     }
-    End 
+    End
     {
         $Results.Content
     }
@@ -238,7 +238,7 @@ function Set-PSWordleScore {
                 "Username" = $user
             }
         }
-        $Results = Invoke-WebRequest @Param 
+        $Results = Invoke-WebRequest @Param
     }
     Process {
         #If our user is currently on the leaderboard we need to adjust the score
@@ -254,7 +254,7 @@ function Set-PSWordleScore {
                     "IsPresent"        = "true"
                 }
             }
-            $Results = Invoke-WebRequest @Param 
+            $Results = Invoke-WebRequest @Param
         }
         #if our user is not currently on the leaderboard, we can just add their score
         else {
@@ -270,7 +270,7 @@ function Set-PSWordleScore {
                     "IsPresent"        = "false"
                 }
             }
-            $Results = Invoke-WebRequest @Param 
+            $Results = Invoke-WebRequest @Param
         }
     }
     End
@@ -278,7 +278,7 @@ function Set-PSWordleScore {
         $Results.Content
     }
 }
-Function Get-MatchedItems {
+function Get-MatchedItems {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -301,7 +301,7 @@ Function Get-MatchedItems {
             }
         }
         [int]$count = -1
-        
+
         $Guess.ToCharArray() | ForEach-Object {
             $Count++
             if ($count -in $changechars) {
@@ -316,7 +316,7 @@ Function Get-MatchedItems {
         $guessNew.toupper()
     }
 }
-Function New-PSWordleGame {
+function New-PSWordleGame {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -378,9 +378,9 @@ Function New-PSWordleGame {
         }
             #region <start> New game prompt and directions
             "
- _  _   __  ____  ____  __    ____ 
+ _  _   __  ____  ____  __    ____
 / )( \ /  \(  _ \(    \(  )  (  __)
-\ /\ /(  O ))   / ) D (/ (_/\ ) _) 
+\ /\ /(  O ))   / ) D (/ (_/\ ) _)
 (_/\_) \__/(__\_)(____/\____/(____)
                        "
                        if ($CompeteOnline) {
@@ -448,7 +448,7 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                     }
                 }
             }
-            
+
             #If you guess is the word, you win
             if ($guess -eq $word.Line) {
                 #If we are running on PWSH then we can use emojis
@@ -465,11 +465,11 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
             }
             #If your guess is too short or too long
             if ($guess.Length -ne 5) {
-                Write-Host "Your guess must be 5 letters!" -ForegroundColor Red; continue 
+                Write-Host "Your guess must be 5 letters!" -ForegroundColor Red; continue
             }
             #If the guess appears to not be a valid word
             if ($guess -notin $dictionaryWords.Line) {
-                Write-Host "That word is not in our dictionary, please try again." -ForegroundColor Red ; continue 
+                Write-Host "That word is not in our dictionary, please try again." -ForegroundColor Red ; continue
             }
             #Get all letters that have been guessed in the correct spots
             [string]$Matches = Get-MatchedItems -Guess $Guess -Word $Word.line
@@ -478,7 +478,7 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
             for ($pos = 0; $pos -lt 5; $pos++) {
                 $shareImage = "⬛️"
                 #Add guessed letters to the array
-                
+
                 #region <start> Reduce letter false positives
                 $guessedLetters += $guess[$pos]
                 #See how many instances of the guessed letter there are in the word
@@ -498,10 +498,10 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                             }
                         }
                         if ($UseEmojiResponses) {
-                            Write-Host "🟩" -NoNewLine; $shareImage = "🟩" 
+                            Write-Host "🟩" -NoNewLine; $shareImage = "🟩"
                         }
                         else {
-                            Write-Host -ForegroundColor Green $guess[$pos] -NoNewLine; $shareImage = "🟩" 
+                            Write-Host -ForegroundColor Green $guess[$pos] -NoNewLine; $shareImage = "🟩"
                         }
                     }
                     #If the letter is in the word, but not in the correct position, we have guessed the letter, but not the correct position
@@ -509,10 +509,10 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                         # If the letter appears once, and its in the $Matches string indicating that its in the correct spot, then any other instance of the letter is incorrect
                         if (($Appearances -eq 1) -and ($Matches.ToCharArray() -contains $guess[$pos])) {
                             if ($UseEmojiResponses) {
-                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️" 
+                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️"
                             }
                             else {
-                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
+                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️"
                             }
                         }
                         # Get the letters from the guessed word up until the current letter and then see how many times the current character appears
@@ -522,20 +522,20 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                             #Add the letter to the correct letters array
                             $correctLetters += $guess[$pos]
                             if ($UseEmojiResponses) {
-                                Write-Host "🟨"  -NoNewLine; $shareImage = "🟨" 
+                                Write-Host "🟨"  -NoNewLine; $shareImage = "🟨"
                             }
                             else {
-                                Write-Host -ForegroundColor Yellow $guess[$pos] -NoNewLine; $shareImage = "🟨" 
+                                Write-Host -ForegroundColor Yellow $guess[$pos] -NoNewLine; $shareImage = "🟨"
                             }
                         }
                         Else {
                             #Add the letter to the correct letters array
                             $correctLetters += $guess[$pos]
                             if ($UseEmojiResponses) {
-                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️" 
+                                Write-Host "⬛️" -NoNewLine; $shareImage = "⬛️"
                             }
                             else {
-                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️" 
+                                Write-Host -ForegroundColor DarkGray $guess[$pos] -NoNewLine; $shareImage = "⬛️"
                             }
                         }
                     }
@@ -544,23 +544,23 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                             Write-Host "⬛️" -NoNewLine
                         }
                         else {
-                            Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine 
+                            Write-Host -ForegroundColor DarkGray $($guess[$pos]) -NoNewLine
                         }
                         if (-not($notLetters -contains $guess[$pos])) {
                             #Add our guessed letter to the array
                             $notLetters += $guess[$pos]
                         }
                     }
-                
-                $wordleShare[$guessCount - 1] += $shareImage 
+
+                $wordleShare[$guessCount - 1] += $shareImage
             }
-    
+
             $guessCount++
             if ($guessCount -eq 7) {
                 #If you did not guess the word in 6 guesses, replace the guess counter with a X
                 [string]$guessCount = "X"
                 Write-Host; Write-Host "Too many guesses! The right word was: '$($word.Line.toupper())'"
-                break 
+                break
             }
             Write-Host
         }
@@ -572,14 +572,14 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
                 $Points = -1
             }
             Else {
-                $points = $pointlookup[$guessCount] 
+                $points = $pointlookup[$guessCount]
             }
             write-host " "
             if ($Points -eq 1) {
-                Write-Host "You have earned $points point!" 
+                Write-Host "You have earned $points point!"
             }
             else {
-                Write-Host "You have earned $points points!" 
+                Write-Host "You have earned $points points!"
             }
             Write-Host "Adding your score to the leaderboard..."
             Set-PSWordleScore -user $username -Score $points -uri "https://funpswordle.azurewebsites.net/api/wordleleaderboard?code=LesznI7agk9vyt3pEu1YCb4ehbo4Mz1lQHewvRfgaw/FNOPXQMiSLg=="
@@ -593,5 +593,43 @@ Write-Host -ForegroundColor DarkGray "GRAY" -NoNewline; Write-Host " means the l
             #Display the line number the wordle word was found on as well as how many guesses it took
             Write-Host "PSWORDLE $($word.LineNumber) $guessCount/6`r`n"
         }
+    }
+}
+function Get-VirtualKeyBoardOutput {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory)]
+        [string[]]
+        $correctMatch,
+        [Parameter(Mandatory)]
+        [string[]]
+        $incorrectMatch,
+        [Parameter(Mandatory)]
+        [string[]]
+        $noMatch
+    )
+    Begin {
+    }
+    Process {
+    }
+    End {
+        'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM' | ForEach-Object {
+            $_.ToCharArray() | ForEach-Object {
+                if ($correctMatch -contains $_) {
+                    Write-Host "$_ " -NoNewline -ForegroundColor DarkGreen
+                }
+                elseif ($incorrectMatch -contains $_) {
+                    Write-Host "$_ " -NoNewline -ForegroundColor DarkYellow
+                }
+                elseif ($noMatch -contains $_) {
+                    Write-Host "$_ " -NoNewline -ForegroundColor DarkRed
+                }
+                else {
+                    Write-Host "$_ " -NoNewline -ForegroundColor Gray
+                }
+            }
+            Write-Host # Terminate the current output line with a newline
+        }
+        Write-Host
     }
 }
